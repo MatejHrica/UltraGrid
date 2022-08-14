@@ -506,7 +506,9 @@ static void copy_frame_impl(bool swap_red_blue, char *dest, char *src, int width
     }
 }
 
-static void copy_frame(bool swap_red_blue, spa_buffer *buffer, video_frame_wrapper& output_frame, int session_width, int session_height, spa_region *crop_region = nullptr){
+static void copy_frame(spa_video_format video_format, spa_buffer *buffer, video_frame_wrapper& output_frame, int session_width, int session_height, spa_region *crop_region = nullptr){
+    bool swap_red_blue = video_format == SPA_VIDEO_FORMAT_BGRA || video_format == SPA_VIDEO_FORMAT_BGRx; 
+        
     if (crop_region != nullptr) {
         copy_frame_impl_cropped(swap_red_blue, output_frame->tiles[0].data, static_cast<char*>(buffer->datas[0].data), session_width, session_height,
             crop_region->position.x, crop_region->position.y, crop_region->size.width, crop_region->size.height);
@@ -563,7 +565,7 @@ static void on_process(void *session_ptr) {
                crop_region = &meta_crop_region->region;
         }
 
-        copy_frame(true, buffer->buffer,next_frame, session.pw.width(), session.pw.height(), crop_region);
+        copy_frame(session.pw.video_format(), buffer->buffer, next_frame, session.pw.width(), session.pw.height(), crop_region);
     
         session.sending_frames.enqueue(std::move(next_frame));
         
